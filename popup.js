@@ -53,20 +53,22 @@ function createSiteRow(site, i) {
   openBtn.addEventListener('click', async () => {
     // Save current URL for the sidepanel to load
     await chrome.storage.local.set({ currentUrl: site.url });
-    // Try to set sidepanel path and open it. Simpler call without tabId to increase reliability.
+
     try {
-      if (chrome.sidePanel && chrome.sidePanel.setOptions) {
-        await chrome.sidePanel.setOptions({ path: 'sidepanel.html', enabled: true });
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab && chrome.sidePanel && chrome.sidePanel.setOptions) {
+        // Bind side panel to the active tab to ensure content loads in-panel
+        await chrome.sidePanel.setOptions({ tabId: tab.id, path: 'sidepanel.html', enabled: true });
       }
       if (chrome.sidePanel && chrome.sidePanel.open) {
-        await chrome.sidePanel.open();
+        await chrome.sidePanel.open({ windowId: tab?.windowId });
       } else {
-        // fallback via service worker
-        chrome.runtime.sendMessage({ action: 'openSidePanel' });
+        console.error('SidePanel API not available');
       }
     } catch (e) {
-      chrome.runtime.sendMessage({ action: 'openSidePanel' });
+      console.error('Failed to open side panel', e);
     }
+
     window.close();
   });
 

@@ -17,13 +17,16 @@ async function openPanelForActiveTab() {
         return true;
       }
     } catch (e) {
-      return false;
+      // continue to fallback below
     }
+
+    // sidePanel API not available or failed — return false so caller can fallback
+    return false;
   } catch (e) {
     return false;
   }
-  return false;
 }
+
 
 // Build DNR rules from saved sites
 async function rebuildDNRRules() {
@@ -99,10 +102,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     (async () => {
       const opened = await openPanelForActiveTab();
       if (!opened) {
-        const { currentUrl } = await chrome.storage.local.get('currentUrl');
-        if (currentUrl) {
-          chrome.tabs.create({ url: currentUrl });
-        }
+        console.error('SidePanel API not available or failed to open.');
       }
     })();
   }

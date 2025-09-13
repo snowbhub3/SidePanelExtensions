@@ -13,8 +13,9 @@
     "sidePanel",
     "activeTab",
     "declarativeNetRequest",
-    "declarativeNetRequestWithHostAccess"
-  ],
+    "declarativeNetRequestWithHostAccess",
+      "windows"
+    ],
   "host_permissions": [
     "<all_urls>"
   ],
