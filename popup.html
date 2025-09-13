@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SidePanelExtensions</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style> body { width: 420px; } .site-actions{display:flex;gap:8px;align-items:center}.site-actions button{min-width:44px}</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="14" height="18" rx="3" stroke="#8b7bff" stroke-width="1.5"/><rect x="7" y="7" width="14" height="14" rx="3" fill="#6da3ff" fill-opacity="0.2" stroke="#6da3ff" stroke-width="1.5"/></svg>
+        SidePanelExtensions <span class="badge">BETA</span>
+      </div>
+      <button id="openSidePanel" class="icon-btn" title="Відкрити бічну панель">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6a2 2 0 0 1 2-2h7" stroke="currentColor" stroke-width="1.5"/><rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M9 4v16" stroke="currentColor" stroke-width="1.5"/></svg>
+      </button>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <div class="font-semibold">Додати поточну сторінку</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="addCurrent" class="button">Add current</button>
+        <button id="clearAll" class="button secondary">Clear</button>
+      </div>
+      <p class="helper" style="margin-top:10px">The list shows only sites you added. Each entry has three actions: open in side panel, open in new tab, delete.</p>
+    </div>
+
+    <div class="list" id="sites" style="margin-top:10px"></div>
+    <p id="blockNote" class="warning" style="display:none">Some sites may block embedding. The extension will attempt proxy fallback automatically.</p>
+  </div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
