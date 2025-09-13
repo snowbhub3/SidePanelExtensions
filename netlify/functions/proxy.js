@@ -56,7 +56,11 @@ exports.handler = async function(event, context) {
     text = text.replace(/<head(.*?)>/i, match => match + inject);
 
     // Rewrite absolute resource references (src, data-src, srcset, link[href], CSS url()) to go through our proxy
-    const proxyBase = event.headers && event.headers['x-proxy-base'] ? event.headers['x-proxy-base'] : process.env.PROXY_BASE || '';
+    // Determine proxy base: prefer env PROXY_BASE, otherwise derive from current request host
+    const detectedProto = (event.headers && (event.headers['x-forwarded-proto'] || event.headers['x-forwarded-protocol'])) || 'https';
+    const detectedHost = (event.headers && (event.headers['host'] || event.headers['x-forwarded-host'])) || '';
+    const inferredBase = detectedHost ? `${detectedProto}://${detectedHost}/.netlify/functions/proxy` : '';
+    const proxyBase = process.env.PROXY_BASE || inferredBase;
     const makeProxy = (u) => proxyBase ? `${proxyBase}?url=${encodeURIComponent(u)}` : u;
 
     // src and data-src
