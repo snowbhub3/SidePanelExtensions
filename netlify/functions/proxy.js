@@ -52,15 +52,24 @@ exports.handler = async function(event, context) {
     text = text.replace(/<head(.*?)>/i, match => match + baseTag);
 
     // Inject viewport and mobile script to emulate iPhone
-    const inject = `\n<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">\n<script>try{Object.defineProperty(navigator,'userAgent',{get:()=>"Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",configurable:true});Object.defineProperty(navigator,'platform',{get:()=> 'iPhone',configurable:true});Object.defineProperty(navigator,'maxTouchPoints',{get:()=>5,configurable:true});}catch(e){};</script>\n`;
-    text = text.replace(/<head(.*?)>/i, match => match + inject);
+    const injectBase = `<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">`;
 
-    // Rewrite absolute resource references (src, data-src, srcset, link[href], CSS url()) to go through our proxy
     // Determine proxy base: prefer env PROXY_BASE, otherwise derive from current request host
     const detectedProto = (event.headers && (event.headers['x-forwarded-proto'] || event.headers['x-forwarded-protocol'])) || 'https';
     const detectedHost = (event.headers && (event.headers['host'] || event.headers['x-forwarded-host'])) || '';
     const inferredBase = detectedHost ? `${detectedProto}://${detectedHost}/.netlify/functions/proxy` : '';
     const proxyBase = process.env.PROXY_BASE || inferredBase;
+
+    // runtime script to rewrite dynamic requests (fetch, XHR) and DOM-added resources to route through proxy
+    const runtime = `\n<script>\n(function(){\n  try{\n    var __proxyBase = '${proxyBase}';\n    function proxify(u){ if(!__proxyBase) return u; try{ if(!u) return u; if(typeof u !== 'string') return u; if(u.indexOf('http')!==0) return u; if(u.indexOf(location.origin)===0) return u; return __proxyBase + '?url=' + encodeURIComponent(u); }catch(e){return u;} }\n    // patch fetch\n    var _fetch = window.fetch; if(_fetch){ window.fetch = function(input, init){ try{ var url = (typeof input === 'string')? input : (input && input.url ? input.url : ''); if(url && url.indexOf('http')===0 && url.indexOf(location.origin)!==0){ var target = proxify(url); if(typeof input === 'string') return _fetch.call(this, target, init); else{ var newReq = new Request(target, input); return _fetch.call(this, newReq, init); } } }catch(e){} return _fetch.call(this, input, init); }; }\n    // patch XHR\n    (function(){ var X = XMLHttpRequest.prototype.open; XMLHttpRequest.prototype.open = function(method, url){ try{ if(url && url.indexOf('http')===0 && url.indexOf(location.origin)!==0){ arguments[1] = proxify(url); } }catch(e){} return X.apply(this, arguments); }; })();\n    // patch setAttribute for dynamic elements\n    var _set = Element.prototype.setAttribute; Element.prototype.setAttribute = function(name, value){ try{ if((name==='src' || name==='href' || name==='data-src') && typeof value === 'string' && value.indexOf('http')===0 && value.indexOf(location.origin)!==0){ value = proxify(value); } }catch(e){} return _set.call(this, name, value); };\n    // patch appendChild to rewrite attributes on newly appended elements\n    var _append = Node.prototype.appendChild; Node.prototype.appendChild = function(child){ try{ if(child && child.getAttribute){ ['src','href','data-src'].forEach(function(attr){ try{ var v = child.getAttribute(attr); if(v && typeof v === 'string' && v.indexOf('http')===0 && v.indexOf(location.origin)!==0){ child.setAttribute(attr, proxify(v)); } }catch(e){} }); } }catch(e){} return _append.call(this, child); };\n  }catch(e){}\n})();\n</script>\n`;
+
+    text = text.replace(/<head(.*?)>/i, match => match + injectBase + runtime);
+
+    // Remove meta CSP tags (prevent inline/script blocks from being blocked)
+    text = text.replace(/<meta[^>]+http-equiv=["']?Content-Security-Policy["']?[^>]*>/gi, '');
+    text = text.replace(/<meta[^>]+name=["']?Content-Security-Policy["']?[^>]*>/gi, '');
+
+    // Rewrite absolute resource references (src, data-src, srcset, link[href], CSS url()) to go through our proxy
     const makeProxy = (u) => proxyBase ? `${proxyBase}?url=${encodeURIComponent(u)}` : u;
 
     // src and data-src
