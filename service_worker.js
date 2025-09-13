@@ -1,7 +1,7 @@
 const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1';
 const BASE_RULE_ID = 1000; // rule ids start from this
 // Set your deployed proxy URL here (after deploying the serverless proxy to Netlify or Vercel)
-const DEFAULT_PROXY_BASE = 'REPLACE_WITH_YOUR_PROXY_URL';
+const DEFAULT_PROXY_BASE = 'https://68c59296d6fdf1204a0ab6a4--resonant-pie-54b9fa.netlify.app/.netlify/functions/proxy';
 
 async function openPanelForActiveTab() {
   try {

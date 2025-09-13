@@ -51,16 +51,17 @@ function createSiteRow(site, i) {
   openBtn.title = 'Відкрити у бічній панелі';
   openBtn.innerHTML = 'Open';
   openBtn.addEventListener('click', async () => {
+    // Save current URL for the sidepanel to load
     await chrome.storage.local.set({ currentUrl: site.url });
+    // Try to set sidepanel path and open it. Simpler call without tabId to increase reliability.
     try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab && chrome.sidePanel && chrome.sidePanel.setOptions) {
-        await chrome.sidePanel.setOptions({ tabId: tab.id, path: 'sidepanel.html', enabled: true });
+      if (chrome.sidePanel && chrome.sidePanel.setOptions) {
+        await chrome.sidePanel.setOptions({ path: 'sidepanel.html', enabled: true });
       }
-      if (tab && chrome.sidePanel && chrome.sidePanel.open) {
-        await chrome.sidePanel.open({ windowId: tab.windowId });
+      if (chrome.sidePanel && chrome.sidePanel.open) {
+        await chrome.sidePanel.open();
       } else {
-        // fallback to service worker
+        // fallback via service worker
         chrome.runtime.sendMessage({ action: 'openSidePanel' });
       }
     } catch (e) {
@@ -105,7 +106,7 @@ async function renderSites(list) {
   if (!list.length) {
     const empty = document.createElement('div');
     empty.className = 'card';
-    empty.innerHTML = '<div class="helper">Список порожній. Натисніть «Додати поточну», щоб зберегти сайт.</div>';
+    empty.innerHTML = '<div class="helper">Список порожній. Нати��ніть «Додати поточну», щоб зберегти сайт.</div>';
     container.appendChild(empty);
     return;
   }
